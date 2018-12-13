@@ -13,6 +13,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewManager
 import android.widget.ImageView
 import android.widget.TextView
 
@@ -35,9 +36,8 @@ import java.util.HashMap
 class MainActivity : AppCompatActivity() {
 
     internal lateinit var mRequestQueue: RequestQueue
-    internal lateinit var mRecyclerView: RecyclerView
-    internal lateinit var mViewAdapter: RecyclerView.Adapter<*>
-    internal lateinit var mViewManager: RecyclerView.LayoutManager
+    internal lateinit var mMovieInfoView: MovieInfoView
+    internal var mDataset: JSONArray? = null
 
     interface ReturnCallback {
         fun setValue(`object`: Any)
@@ -61,7 +61,6 @@ class MainActivity : AppCompatActivity() {
             holder.mTextView.setText(mDataset.get(position))
         }
 
-
         override fun getItemCount() = mDataset.size
 
         fun setItem() {
@@ -77,19 +76,12 @@ class MainActivity : AppCompatActivity() {
 
         val myDataset = arrayOf("hi", "hello", "recycling", "template", "testing", "etc")
 
+        val mViewManager: RecyclerView.LayoutManager = LinearLayoutManager(this)
+        val mViewAdapter : RecyclerView.Adapter<*> = MyAdapter(myDataset)
+
         mRequestQueue = Volley.newRequestQueue(this)
-
-        mViewManager = LinearLayoutManager(this)
-        mViewAdapter = MyAdapter(myDataset)
-
-        mRecyclerView = findViewById<RecyclerView>(R.id.recyclerView).apply {
-            //setHasFixedSize(true)
-            layoutManager = mViewManager
-            adapter = mViewAdapter
-        }
-
-        myDataset.set(1, "modified")
-        mViewAdapter.notifyItemChanged(1);
+        mMovieInfoView = findViewById(R.id.recyclerView) as MovieInfoView
+        mMovieInfoView.init(this)
 
         ActivityCompat.requestPermissions(this,
                 arrayOf(Manifest.permission.INTERNET),
@@ -115,6 +107,7 @@ class MainActivity : AppCompatActivity() {
                     try {
                         //textView.text = response.get("items").toString()
                         val itemArr = response.get("items") as JSONArray
+                        mMovieInfoView.updateData(itemArr)
                         for (i in 0 .. itemArr.length()) {
                             val item = itemArr.get(i) as JSONObject
                             val urlImage = item.get("image").toString()
