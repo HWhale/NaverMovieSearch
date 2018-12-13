@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
 
     class MyAdapter(private val myDataset: Array<String>) :
             RecyclerView.Adapter<MyAdapter.MyViewHolder>() {
-        var mDataset = myDataset
+        var mDataset : Array<String> = myDataset
         class MyViewHolder(val textView: View) : RecyclerView.ViewHolder(textView) {
             var mTextView = textView.findViewById(R.id.ViewHolderText) as TextView
         }
@@ -61,19 +61,21 @@ class MainActivity : AppCompatActivity() {
             holder.mTextView.setText(mDataset.get(position))
         }
 
+
         override fun getItemCount() = mDataset.size
+
+        fun setItem() {
+            mDataset[0] = "Fixed"
+        }
     }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         Log.v("Value", "Test")
 
-        val myDataset = arrayOf("hi", "hello", "recycling");
-
-        for(i in 0 .. myDataset.size-1) {
-            Log.v("data", myDataset.get(i))
-        }
+        val myDataset = arrayOf("hi", "hello", "recycling", "template", "testing", "etc")
 
         mRequestQueue = Volley.newRequestQueue(this)
 
@@ -86,7 +88,8 @@ class MainActivity : AppCompatActivity() {
             adapter = mViewAdapter
         }
 
-
+        myDataset.set(1, "modified")
+        mViewAdapter.notifyItemChanged(1);
 
         ActivityCompat.requestPermissions(this,
                 arrayOf(Manifest.permission.INTERNET),
@@ -101,7 +104,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val bitmapArr = arrayOfNulls<Bitmap>(10)
-        val textView = findViewById<View>(R.id.Text1) as TextView
+        //val textView = findViewById<View>(R.id.Text1) as TextView
 
         val url = "https://openapi.naver.com/v1/search/movie.json?query=superman"
         val queue = Volley.newRequestQueue(this)
@@ -110,7 +113,7 @@ class MainActivity : AppCompatActivity() {
                 Response.Listener { response ->
                     //textView.setText("Response is: ");
                     try {
-                        textView.text = response.get("items").toString()
+                        //textView.text = response.get("items").toString()
                         val itemArr = response.get("items") as JSONArray
                         for (i in 0 .. itemArr.length()) {
                             val item = itemArr.get(i) as JSONObject
@@ -127,7 +130,7 @@ class MainActivity : AppCompatActivity() {
                 },
                 Response.ErrorListener { error ->
                     Log.e("Volley", error.toString())
-                    textView.text = "That didn't work!"
+                    //textView.text = "That didn't work!"
                 }
         ) {
             //@Throws(AuthFailureError::class)
