@@ -14,6 +14,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewManager
+import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 
@@ -33,56 +35,36 @@ import org.json.JSONObject
 
 import java.util.HashMap
 
+const val NAVER_CLIENT_ID = "9XnUQAJXupcY1g8SBt74"
+const val NAVER_CLIENT_SECRET = "JpEW74dmIO"
+
 class MainActivity : AppCompatActivity() {
-
-    internal lateinit var mRequestQueue: RequestQueue
-    internal lateinit var mMovieInfoView: MovieInfoView
-    internal var mDataset: JSONArray? = null
-
-    interface ReturnCallback {
-        fun setValue(`object`: Any)
-    }
-
-    class MyAdapter(private val myDataset: Array<String>) :
-            RecyclerView.Adapter<MyAdapter.MyViewHolder>() {
-        var mDataset : Array<String> = myDataset
-        class MyViewHolder(val textView: View) : RecyclerView.ViewHolder(textView) {
-            var mTextView = textView.findViewById(R.id.ViewHolderText) as TextView
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyAdapter.MyViewHolder {
-            Log.v("Item", "hiaaaa")
-            val textView = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.view_viewholder, parent, false) as View
-            return MyViewHolder(textView);
-        }
-
-        override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-            holder.mTextView.setText(mDataset.get(position))
-        }
-
-        override fun getItemCount() = mDataset.size
-
-        fun setItem() {
-            mDataset[0] = "Fixed"
-        }
-    }
-
+    private lateinit var mMovieInfoView: MovieInfoView
+    private lateinit var mQueryEdit: EditText
+    private lateinit var mSearchButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        Log.v("Value", "Test")
 
-        val myDataset = arrayOf("hi", "hello", "recycling", "template", "testing", "etc")
+        AppSingleton.initRequestQueue(this)
 
-        val mViewManager: RecyclerView.LayoutManager = LinearLayoutManager(this)
-        val mViewAdapter : RecyclerView.Adapter<*> = MyAdapter(myDataset)
+        initMembers()
+        getNetworkPermission()
+    }
 
-        mRequestQueue = Volley.newRequestQueue(this)
-        mMovieInfoView = findViewById(R.id.recyclerView) as MovieInfoView
+    private fun initMembers() {
+        mMovieInfoView = findViewById(R.id.recyclerView)
+        mSearchButton = findViewById(R.id.buttonSearch)
+        mQueryEdit = findViewById(R.id.editKeyword)
         mMovieInfoView.init(this)
 
+        mSearchButton.setOnClickListener { view ->
+            getNaverMovie(mQueryEdit.text.toString());
+        }
+    }
+
+    private fun getNetworkPermission() {
         ActivityCompat.requestPermissions(this,
                 arrayOf(Manifest.permission.INTERNET),
                 10)
@@ -94,54 +76,31 @@ class MainActivity : AppCompatActivity() {
         } else {
             Log.i("Permission", "Failed")
         }
+    }
 
-        val bitmapArr = arrayOfNulls<Bitmap>(10)
-        //val textView = findViewById<View>(R.id.Text1) as TextView
-
-        val url = "https://openapi.naver.com/v1/search/movie.json?query=superman"
-        val queue = Volley.newRequestQueue(this)
+    private fun getNaverMovie(keyword: String) {
+        val url = "https://openapi.naver.com/v1/search/movie.json?query="+keyword
         val stringRequest = object : JsonObjectRequest(Request.Method.GET,
                 url, null,
                 Response.Listener { response ->
-                    //textView.setText("Response is: ");
                     try {
-                        //textView.text = response.get("items").toString()
                         val itemArr = response.get("items") as JSONArray
                         mMovieInfoView.updateData(itemArr)
-                        for (i in 0 .. itemArr.length()) {
-                            val item = itemArr.get(i) as JSONObject
-                            val urlImage = item.get("image").toString()
-                            val imageRequest = ImageRequest(urlImage,
-                                    Response.Listener { Log.i("image", "got image") }, 300, 200, ImageView.ScaleType.CENTER, Bitmap.Config.RGB_565,
-                                    Response.ErrorListener { error -> Log.e("Image", error.toString()) })
-                            mRequestQueue.add(imageRequest)
-
-                            Log.i("item", item.get("image").toString())
-                        }
                     } catch (e: JSONException) {
                     }
                 },
                 Response.ErrorListener { error ->
                     Log.e("Volley", error.toString())
-                    //textView.text = "That didn't work!"
                 }
         ) {
             //@Throws(AuthFailureError::class)
             override fun getHeaders(): Map<String, String> {
                 val headers = HashMap<String, String>()
-                headers.put("X-Naver-Client-Id", "9XnUQAJXupcY1g8SBt74");
-                headers.put("X-Naver-Client-Secret", "JpEW74dmIO");
+                headers.put("X-Naver-Client-Id", NAVER_CLIENT_ID);
+                headers.put("X-Naver-Client-Secret", NAVER_CLIENT_SECRET);
                 return headers
             }
         }
-        mRequestQueue.add(stringRequest)
-    }
-
-    private fun getImageRequest(url: String): Bitmap? {
-        val imageRequest = ImageRequest(url,
-                Response.Listener { }, 300, 200, ImageView.ScaleType.CENTER, Bitmap.Config.RGB_565,
-                Response.ErrorListener { })
-        mRequestQueue.add(imageRequest)
-        return null
+        AppSingleton.addMessage(stringRequest)
     }
 }
