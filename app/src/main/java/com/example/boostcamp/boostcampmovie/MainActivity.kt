@@ -1,6 +1,8 @@
 package com.example.boostcamp.boostcampmovie
 
 import android.Manifest
+import android.app.SearchManager
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.support.v4.app.ActivityCompat
@@ -35,8 +37,7 @@ import org.json.JSONObject
 
 import java.util.HashMap
 
-const val NAVER_CLIENT_ID = "9XnUQAJXupcY1g8SBt74"
-const val NAVER_CLIENT_SECRET = "JpEW74dmIO"
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var mMovieInfoView: MovieInfoView
@@ -57,10 +58,11 @@ class MainActivity : AppCompatActivity() {
         mMovieInfoView = findViewById(R.id.recyclerView)
         mSearchButton = findViewById(R.id.buttonSearch)
         mQueryEdit = findViewById(R.id.editKeyword)
-        mMovieInfoView.init(this)
+        mMovieInfoView.init(this, this::openLinkActivity)
 
-        mSearchButton.setOnClickListener { view ->
-            getNaverMovie(mQueryEdit.text.toString());
+        mSearchButton.setOnClickListener {
+            mMovieInfoView.setKeyword(mQueryEdit.text.toString())
+            mMovieInfoView.addMovie()
         }
     }
 
@@ -78,29 +80,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getNaverMovie(keyword: String) {
-        val url = "https://openapi.naver.com/v1/search/movie.json?query="+keyword
-        val stringRequest = object : JsonObjectRequest(Request.Method.GET,
-                url, null,
-                Response.Listener { response ->
-                    try {
-                        val itemArr = response.get("items") as JSONArray
-                        mMovieInfoView.updateData(itemArr)
-                    } catch (e: JSONException) {
-                    }
-                },
-                Response.ErrorListener { error ->
-                    Log.e("Volley", error.toString())
-                }
-        ) {
-            //@Throws(AuthFailureError::class)
-            override fun getHeaders(): Map<String, String> {
-                val headers = HashMap<String, String>()
-                headers.put("X-Naver-Client-Id", NAVER_CLIENT_ID);
-                headers.put("X-Naver-Client-Secret", NAVER_CLIENT_SECRET);
-                return headers
-            }
-        }
-        AppSingleton.addMessage(stringRequest)
+    internal fun openLinkActivity(link: String) {
+        val intent = Intent()
+        intent.setAction(Intent.ACTION_WEB_SEARCH)
+        intent.putExtra(SearchManager.QUERY, link)
+        startActivity(intent)
     }
 }
